@@ -9,6 +9,7 @@
 import Foundation
 import RxSwift
 import RxCocoa
+import AppKit
 
 final class FeedListViewModel: FeedListViewModelType {
 
@@ -120,5 +121,25 @@ final class FeedListViewModel: FeedListViewModelType {
                 self?.errorRelay.accept(error.localizedDescription)
             })
             .disposed(by: disposeBag)
+    }
+}
+
+// MARK: - Feed IconName Extension
+extension Feed {
+    var iconName: String {
+        let symbols = [
+            "globe", "book", "flame", "sparkles", "bolt",
+            "cloud.sun", "antenna.radiowaves.left.and.right",
+            "paperplane", "lightbulb", "terminal"
+        ]
+        let hashValue = abs(self.title.hashValue)
+        return symbols[hashValue % symbols.count]
+    }
+}
+
+extension Feed {
+    var accentColor: NSColor {
+        let hue = CGFloat(abs(self.title.hashValue % 360)) / 360.0
+        return NSColor(hue: hue, saturation: 0.6, brightness: 0.9, alpha: 1.0)
     }
 }
