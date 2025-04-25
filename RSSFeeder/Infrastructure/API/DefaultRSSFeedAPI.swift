@@ -1,9 +1,9 @@
 //
 //  DefaultRSSFeedAPI.swift
 //  RSSFeeder
-//  
+//
 //  Created by matsuohiroki on 2025/04/24.
-//  
+//
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import FeedKit
 import RxSwift
 
 final class DefaultRSSFeedAPI: RSSFeedAPI {
-    func fetchFeedArticles(from url: URL) -> Single<[RSSArticleDTO]> {
+    func fetchFeedArticles(from url: URL) -> Single<RSSFeedDTO> {
         return Single.create { single in
             let parser = FeedParser(URL: url)
 
@@ -22,7 +22,7 @@ final class DefaultRSSFeedAPI: RSSFeedAPI {
                         single(.failure(RSSParseError.unsupportedFormat))
                         return
                     }
-                    let items = rssFeed.items?.compactMap { item -> RSSArticleDTO? in
+                    let articles = rssFeed.items?.compactMap { item -> RSSArticleDTO? in
                         guard
                             let title = item.title,
                             let linkStr = item.link,
@@ -31,17 +31,22 @@ final class DefaultRSSFeedAPI: RSSFeedAPI {
                         else {
                             return nil
                         }
-
+                
                         return RSSArticleDTO(
                             title: title,
                             link: link,
                             publishedAt: pubDate,
-                            summary: item.description,
-                            feedTitle: rssFeed.title
+                            summary: item.description
                         )
                     } ?? []
 
-                    single(.success(items))
+                    let feedDTO = RSSFeedDTO(
+                        title: rssFeed.title ?? "Untitled Feed",
+                        lastBuildDate: rssFeed.lastBuildDate,
+                        articles: articles
+                    )
+
+                    single(.success(feedDTO))
 
                 case .failure(let error):
                     single(.failure(error))

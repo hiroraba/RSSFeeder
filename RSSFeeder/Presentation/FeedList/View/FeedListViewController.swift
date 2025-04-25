@@ -42,6 +42,7 @@
             tableView.dataSource = self
             bindViewModel()
             viewModel.onAppear()
+            
         }
 
         private func setupUI() {
@@ -88,10 +89,6 @@
                 .drive(onNext: { [weak self] feeds in
                     self?.feedItems = feeds
                     self?.tableView.reloadData()
-                    
-                    guard let self = self, !self.hasRefreshedOnce else { return }
-                    self.hasRefreshedOnce = true
-                    feeds.forEach { self.viewModel.refreshFeedTrigger.accept($0) }
                 })
                 .disposed(by: disposeBag)
 

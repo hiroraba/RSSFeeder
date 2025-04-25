@@ -10,5 +10,5 @@ import Foundation
 import RxSwift
 
 protocol RSSFeedAPI {
-    func fetchFeedArticles(from url: URL) -> Single<[RSSArticleDTO]>
+    func fetchFeedArticles(from url: URL) -> Single<RSSFeedDTO>
 }

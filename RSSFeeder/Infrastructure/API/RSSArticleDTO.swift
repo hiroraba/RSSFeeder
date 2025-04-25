@@ -13,5 +13,4 @@ struct RSSArticleDTO {
     let link: URL
     let publishedAt: Date
     let summary: String?
-    let feedTitle: String?
 }

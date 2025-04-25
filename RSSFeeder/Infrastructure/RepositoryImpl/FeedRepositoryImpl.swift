@@ -34,7 +34,7 @@ final class FeedRepositoryImpl: FeedRepository {
 
     func addFeed(url: URL) -> Completable {
         return rssParser.fetchFeedArticles(from: url)
-            .flatMapCompletable { dtoArticles in
+            .flatMapCompletable { feedDTO in
                 Completable.create { observer in
                     let realm = try! Realm()
                     do {
@@ -42,11 +42,11 @@ final class FeedRepositoryImpl: FeedRepository {
                             let feedID = UUID().uuidString
                             let feed = RealmFeed()
                             feed.id = feedID
-                            feed.title = dtoArticles.first?.feedTitle ?? "Unknown Feed"
+                            feed.title = feedDTO.title
                             feed.urlString = url.absoluteString
-                            feed.lastUpdated = Date()
+                            feed.lastUpdated = feedDTO.lastBuildDate
 
-                            let articles = dtoArticles.map { dto -> RealmArticle in
+                            let articles = feedDTO.articles.map { dto -> RealmArticle in
                                 let a = RealmArticle()
                                 a.id = UUID().uuidString
                                 a.feedID = feedID
@@ -105,7 +105,7 @@ final class FeedRepositoryImpl: FeedRepository {
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .userInitiated))
     }
     
-    func updateArticles(for feed: Feed, with articles: [RSSArticleDTO]) -> Completable {
+    func updateArticles(for feed: Feed, with feedDTO: RSSFeedDTO) -> Completable {
         return Completable.create { observer in
             do {
                 let realm = try Realm()
@@ -117,7 +117,7 @@ final class FeedRepositoryImpl: FeedRepository {
                 try realm.write {
                     realm.delete(realmFeed.articles)
 
-                    let newArticles = articles.map { dto -> RealmArticle in
+                    let newArticles = feedDTO.articles.map { dto -> RealmArticle in
                         let article = RealmArticle()
                         article.id = UUID().uuidString
                         article.feedID = feed.id
@@ -130,7 +130,8 @@ final class FeedRepositoryImpl: FeedRepository {
                     }
 
                     realmFeed.articles.append(objectsIn: newArticles)
-                    realmFeed.lastUpdated = Date()
+                    realmFeed.title = feedDTO.title
+                    realmFeed.lastUpdated = feedDTO.lastBuildDate ?? Date()
                 }
 
                 observer(.completed)

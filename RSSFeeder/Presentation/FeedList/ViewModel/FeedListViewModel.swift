@@ -84,12 +84,9 @@ final class FeedListViewModel: FeedListViewModelType {
             .disposed(by: disposeBag)
         
         refreshFeedTrigger
-            .flatMapLatest { [weak self] feed -> Completable in
+            .flatMap { [weak self] feed -> Completable in
                 guard let self = self else { return .empty() }
                 return self.refreshFeedUseCase.execute(feed: feed)
-                    .do(onCompleted: { [weak self] in
-                        self?.onAppear()
-                    })
             }
             .subscribe(onError: { [weak self] error in
                 self?.errorRelay.accept(error.localizedDescription)
@@ -98,7 +95,18 @@ final class FeedListViewModel: FeedListViewModelType {
     }
 
     func onAppear() {
-        loadFeeds()
+        isLoadingRelay.accept(true)
+        fetchFeedsUseCase.execute()
+            .subscribe(onSuccess: { [weak self] feeds in
+                guard let self = self else { return }
+                self.feedsRelay.accept(feeds)
+                self.isLoadingRelay.accept(false)
+                feeds.forEach { self.refreshFeedTrigger.accept($0) }
+            }, onFailure: { [weak self] error in
+                self?.isLoadingRelay.accept(false)
+                self?.errorRelay.accept(error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
     }
 
     private func loadFeeds() {

@@ -13,5 +13,5 @@ protocol FeedRepository {
     func fetchFeeds() -> Single<[Feed]>
     func addFeed(url: URL) -> Completable
     func deleteFeed(feed: Feed) -> Completable
-    func updateArticles(for feed: Feed, with articles: [RSSArticleDTO]) -> Completable
+    func updateArticles(for feed: Feed, with feedDTO: RSSFeedDTO) -> Completable
 }
