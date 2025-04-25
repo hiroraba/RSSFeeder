@@ -36,7 +36,7 @@
             super.init(coder: coder)
         }
 
-        override func loadView() {
+        override func viewDidLoad() {
             setupUI()
             tableView.delegate = self
             tableView.dataSource = self
