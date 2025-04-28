@@ -15,6 +15,7 @@ protocol FeedListViewModelType {
     var addFeedTrigger: PublishRelay<URL> { get }
     var deleteFeedTrigger: PublishRelay<Feed> { get }
     var refreshFeedTrigger: PublishRelay<Feed> { get }
+    var refreshAllFeedsTrigger: PublishRelay<Void> { get }
 
     // Outputs
     var feeds: Driver<[Feed]> { get }

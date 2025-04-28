@@ -42,7 +42,7 @@ final class DefaultRSSFeedAPI: RSSFeedAPI {
 
                     let feedDTO = RSSFeedDTO(
                         title: rssFeed.title ?? "Untitled Feed",
-                        lastBuildDate: rssFeed.lastBuildDate,
+                        lastBuildDate: rssFeed.lastBuildDate ?? Date(),
                         articles: articles
                     )
 

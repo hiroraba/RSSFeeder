@@ -23,6 +23,13 @@ final class ArticleListViewController: NSViewController, NSTableViewDataSource, 
     private let disposeBag = DisposeBag()
     private var articles: [Article] = []
 
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     init(viewModel: ArticleListViewModelType) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -106,68 +113,72 @@ final class ArticleListViewController: NSViewController, NSTableViewDataSource, 
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let identifier = NSUserInterfaceItemIdentifier("ArticleCell")
-        let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSView ?? {
-            let container = NSView()
-            container.identifier = identifier
-
-            let titleLabel = NSTextField(labelWithString: "")
-            titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
-            titleLabel.textColor = .labelColor
-            titleLabel.lineBreakMode = .byWordWrapping
-            titleLabel.maximumNumberOfLines = 2
-            titleLabel.translatesAutoresizingMaskIntoConstraints = false
-            titleLabel.tag = 1
-
-            let metaLabel = NSTextField(labelWithString: "")
-            metaLabel.font = NSFont.systemFont(ofSize: 11)
-            metaLabel.textColor = .secondaryLabelColor
-            metaLabel.translatesAutoresizingMaskIntoConstraints = false
-            metaLabel.tag = 2
-
-            let summaryLabel = NSTextField(labelWithString: "")
-            summaryLabel.font = NSFont.systemFont(ofSize: 13)
-            summaryLabel.textColor = .tertiaryLabelColor
-            summaryLabel.lineBreakMode = .byWordWrapping
-            summaryLabel.maximumNumberOfLines = 3
-            summaryLabel.translatesAutoresizingMaskIntoConstraints = false
-            summaryLabel.tag = 3
-
-            let separator = NSBox()
-            separator.boxType = .separator
-            separator.translatesAutoresizingMaskIntoConstraints = false
-
-            [titleLabel, metaLabel, summaryLabel, separator].forEach { container.addSubview($0) }
-
-            NSLayoutConstraint.activate([
-                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
-                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-                titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-
-                metaLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-                metaLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                metaLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-
-                summaryLabel.topAnchor.constraint(equalTo: metaLabel.bottomAnchor, constant: 4),
-                summaryLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                summaryLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-                summaryLabel.bottomAnchor.constraint(lessThanOrEqualTo: separator.topAnchor, constant: -10),
-
-                separator.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-                separator.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-                separator.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-                separator.heightAnchor.constraint(equalToConstant: 1)
-            ])
-
-            return container
-        }()
-
         let article = articles[row]
-        (cell.viewWithTag(1) as? NSTextField)?.stringValue = article.title
-        (cell.viewWithTag(2) as? NSTextField)?.stringValue = "\(article.title)  •  \(DateFormatter.localizedString(from: article.publishedAt, dateStyle: .short, timeStyle: .short))"
-        (cell.viewWithTag(3) as? NSTextField)?.stringValue = article.summary ?? ""
+        let identifier = NSUserInterfaceItemIdentifier("ArticleCell")
+        if let cell = tableView.makeView(withIdentifier: identifier, owner: self) {
+            (cell.viewWithTag(1) as? NSTextField)?.stringValue = article.title
+            (cell.viewWithTag(2) as? NSTextField)?.stringValue = "\(article.title)  •  \(dateFormatter.string(from: article.publishedAt))"
+            (cell.viewWithTag(3) as? NSTextField)?.stringValue = article.summary ?? ""
+            return cell
+        } else {
+            return makeArticleCell(for: article)
+        }
+    }
 
-        return cell
+    private func makeArticleCell(for article: Article) -> NSView {
+        let identifier = NSUserInterfaceItemIdentifier("ArticleCell")
+        let container = NSView()
+        container.identifier = identifier
+
+        let titleLabel = NSTextField(labelWithString: article.title)
+        titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.textColor = .labelColor
+        titleLabel.lineBreakMode = .byWordWrapping
+        titleLabel.maximumNumberOfLines = 2
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.tag = 1
+
+        let metaLabel = NSTextField(labelWithString: "\(article.title)  •  \(dateFormatter.string(from: article.publishedAt))")
+        metaLabel.font = NSFont.systemFont(ofSize: 11)
+        metaLabel.textColor = .secondaryLabelColor
+        metaLabel.translatesAutoresizingMaskIntoConstraints = false
+        metaLabel.tag = 2
+
+        let summaryLabel = NSTextField(labelWithString: article.summary ?? "")
+        summaryLabel.font = NSFont.systemFont(ofSize: 13)
+        summaryLabel.textColor = .tertiaryLabelColor
+        summaryLabel.lineBreakMode = .byWordWrapping
+        summaryLabel.maximumNumberOfLines = 3
+        summaryLabel.translatesAutoresizingMaskIntoConstraints = false
+        summaryLabel.tag = 3
+
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+
+        [titleLabel, metaLabel, summaryLabel, separator].forEach { container.addSubview($0) }
+
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+
+            metaLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            metaLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            metaLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+
+            summaryLabel.topAnchor.constraint(equalTo: metaLabel.bottomAnchor, constant: 4),
+            summaryLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            summaryLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            summaryLabel.bottomAnchor.constraint(lessThanOrEqualTo: separator.topAnchor, constant: -10),
+
+            separator.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            separator.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            separator.heightAnchor.constraint(equalToConstant: 1)
+        ])
+
+        return container
     }
     
     func rebindViewModel(_ newViewModel: ArticleListViewModelType) {

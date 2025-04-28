@@ -17,6 +17,7 @@ final class FeedListViewModel: FeedListViewModelType {
     let addFeedTrigger = PublishRelay<URL>()
     let deleteFeedTrigger = PublishRelay<Feed>()
     let refreshFeedTrigger = PublishRelay<Feed>()
+    let refreshAllFeedsTrigger = PublishRelay<Void>()
 
     // MARK: - Output
     private let feedsRelay = BehaviorRelay<[Feed]>(value: [])
@@ -24,7 +25,7 @@ final class FeedListViewModel: FeedListViewModelType {
     private let errorRelay = PublishRelay<String?>()
 
     var feeds: Driver<[Feed]> {
-        feedsRelay.asDriver()
+        return feedsRelay.asDriver()
     }
 
     var isLoading: Driver<Bool> {
@@ -88,6 +89,19 @@ final class FeedListViewModel: FeedListViewModelType {
             .flatMap { [weak self] feed -> Completable in
                 guard let self = self else { return .empty() }
                 return self.refreshFeedUseCase.execute(feed: feed)
+            }
+            .subscribe(onError: { [weak self] error in
+                self?.errorRelay.accept(error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
+
+        refreshAllFeedsTrigger
+            .flatMapLatest { [weak self] _ -> Completable in
+                guard let self = self else { return .empty() }
+                let refreshTasks = self.feedsRelay.value.map { feed in
+                    self.refreshFeedUseCase.execute(feed: feed)
+                }
+                return Completable.zip(refreshTasks)
             }
             .subscribe(onError: { [weak self] error in
                 self?.errorRelay.accept(error.localizedDescription)

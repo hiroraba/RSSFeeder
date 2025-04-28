@@ -25,6 +25,13 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
     
     private var hasRefreshedOnce = false
 
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     init(viewModel: FeedListViewModelType) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -79,7 +86,7 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
             addButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
 
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 
@@ -143,6 +150,10 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        return makeFeedCell(for: feedItems[row])
+    }
+    
+    private func makeFeedCell(for feed: Feed) -> NSView {
         let identifier = NSUserInterfaceItemIdentifier("FeedCell")
 
         let cell = NSTableCellView()
@@ -171,7 +182,6 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
         separator.translatesAutoresizingMaskIntoConstraints = false
 
         // --- 差し色バーの追加 ---
-        let feed = feedItems[row]
         let colorBar = NSView()
         colorBar.wantsLayer = true
         colorBar.layer?.cornerRadius = 2
@@ -219,10 +229,7 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
         iconView.image = NSImage(systemSymbolName: feed.iconName, accessibilityDescription: nil)
 
         if let latest = feed.lastUpdated {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .short
-            dateLabel.stringValue = "Last updated: \(formatter.string(from: latest))"
+            dateLabel.stringValue = "Last updated: \(dateFormatter.string(from: latest))"
         } else {
             dateLabel.stringValue = "No articles"
         }
@@ -243,6 +250,12 @@ final class FeedListViewController: NSViewController, NSTableViewDataSource, NST
     
     // MARK: - Keyboard Handling
     override func keyDown(with event: NSEvent) {
+        
+        if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "r" {
+            viewModel.refreshAllFeedsTrigger.accept(())
+            return
+        }
+        
         guard event.keyCode == 51 else { // 51 = delete/backspace key
             super.keyDown(with: event)
             return
